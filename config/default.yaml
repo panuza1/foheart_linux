@@ -1,0 +1,21 @@
+usb:
+  mode: auto
+  pid: auto
+  interface: auto
+  in_endpoint: auto
+  out_endpoint: auto
+  timeout_ms: 1000
+  read_size: auto
+
+protocol:
+  outer_frame: auto
+  sensor_id_mode: auto
+
+stream:
+  mode: read_only
+
+monitor:
+  show_raw: false
+  show_euler: true
+  show_quaternion: true
+  show_imu: true

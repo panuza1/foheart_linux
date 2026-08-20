@@ -1,0 +1,4 @@
+# TEMPLATE ONLY: verify the connected device with lsusb before installing.
+SUBSYSTEM=="usb", ATTR{idVendor}=="1483", ATTR{idProduct}=="5751", MODE="0660", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTR{idVendor}=="1483", ATTR{idProduct}=="5851", MODE="0660", GROUP="plugdev"
+
