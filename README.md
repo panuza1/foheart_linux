@@ -67,4 +67,4 @@ Copy and edit `99-foheart.rules.example` only after confirming the actual ID wit
 reload udev rules and reconnect the router.
 
 Protocol evidence and unresolved fields are tracked in
-`docs/protocol_status.md` and `CODEX_PROTOCOL_RECOVERY_REPORT.md`.
+`docs/protocol_status.md`.

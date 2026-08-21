@@ -2,4 +2,20 @@
 __pycache__/
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Agent scratch reports
+CODEX_*.md
+.cursor/
+.vscode/
+.idea/
+.DS_Store
+
+# Generated USB captures
+samples/*.bin
 
