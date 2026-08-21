@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import math
 import time
+from pathlib import Path
 
 import numpy as np
 import usb.core
@@ -18,6 +19,7 @@ from foheart.config import (
 from foheart.constants import FOHEART_VID
 from foheart.mocap.sensor import Quaternion, SensorFrame, SensorSample, Vector3
 from foheart.protocol.definitions import ProtocolError
+from foheart.protocol.frame import iter_poll_recording
 from foheart.protocol.parser import (
     C1ProtocolParser,
     resolve_outer_frame,
@@ -142,6 +144,10 @@ def _print_frame(
         ]
         if monitor.show_quaternion and sensor.quaternion:
             fields.append(f"quat={tuple(round(value, 4) for value in sensor.quaternion.values)}")
+            fields.append(
+                "quat_norm="
+                f"{math.sqrt(sum(value * value for value in sensor.quaternion.values)):.6f}"
+            )
         if monitor.show_euler and sensor.euler:
             fields.append(f"euler=({sensor.euler.x:.4f}, {sensor.euler.y:.4f}, {sensor.euler.z:.4f})")
         if monitor.show_imu:
@@ -152,6 +158,11 @@ def _print_frame(
             ):
                 if vector:
                     fields.append(f"{name}=({vector.x:.4f}, {vector.y:.4f}, {vector.z:.4f})")
+        if sensor.field_status:
+            fields.append(
+                "status="
+                + ",".join(f"{name}:{status}" for name, status in sensor.field_status)
+            )
         print("  " + "  ".join(fields))
 
 
@@ -163,6 +174,11 @@ def _print_raw(payload: bytes, endpoint: int, show_raw: bool) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="FOHEART terminal sensor monitor")
     parser.add_argument("--mock", action="store_true")
+    parser.add_argument(
+        "--capture",
+        type=Path,
+        help="offline boundary-preserving poll capture; performs no USB operations",
+    )
     parser.add_argument(
         "--count",
         type=int,
@@ -182,6 +198,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.mock and args.capture:
+        raise SystemExit("--mock and --capture are mutually exclusive")
     if args.count < 0 or args.sensors < 1:
         raise SystemExit("--count must be non-negative and --sensors must be positive")
     try:
@@ -192,6 +210,34 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     sensor_id_mode = resolve_sensor_id_mode(config.protocol.sensor_id_mode)
+    if args.capture:
+        protocol = C1ProtocolParser("unknown")
+        decoded = 0
+        print(f"FOHEART OFFLINE CAPTURE MONITOR: {args.capture}")
+        print("NO USB OPERATIONS")
+        try:
+            records = iter_poll_recording(args.capture)
+            for record in records:
+                if not record.payload:
+                    continue
+                try:
+                    frames = protocol.feed(
+                        record.payload, timestamp_ns=record.in_timestamp_ns
+                    )
+                except ProtocolError as exc:
+                    print(f"poll={record.sequence} raw/undecoded: {exc}")
+                    continue
+                for frame in frames:
+                    _print_frame(frame, config.monitor, "unknown", mock=False)
+                    decoded += 1
+                    if args.count and decoded >= args.count:
+                        print(f"Decoded {decoded} frames")
+                        return 0
+        except OSError as exc:
+            print(f"Could not read capture: {exc}")
+            return 2
+        print(f"Decoded {decoded} frames")
+        return 0
     if args.mock:
         _print_runtime_config(config)
         print("\n*** MOCK DATA ***")

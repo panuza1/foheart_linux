@@ -59,7 +59,8 @@ def main(argv: list[str] | None = None) -> int:
             f"serial={device.serial!r}"
         )
         for error in device.access_errors:
-            print(f"  access error: {error}")
+            label = "warning" if "(non-fatal)" in error else "access error"
+            print(f"  {label}: {error}")
         if device.pid in ROUTER_PIDS:
             try:
                 selection = select_endpoints(

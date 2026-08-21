@@ -5,10 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "foheart-linux"
 version = "0.1.0"
-description = "Linux-native USB capture foundation for FOHEART C1 routers"
+description = "Linux FOHEART C1 capture and upper-body joint viewer"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "matplotlib>=3.7",
     "numpy>=1.23",
     "PyYAML>=6",
     "pyusb>=1.2",

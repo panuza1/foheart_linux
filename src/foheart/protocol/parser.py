@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import struct
 import time
+from dataclasses import dataclass
 
 from foheart.mocap.sensor import Quaternion, SensorFrame, SensorSample, Vector3
 from foheart.protocol.definitions import MalformedPayloadError, ProtocolNotDecodedError
@@ -12,6 +13,26 @@ BULK_HS_FIXED_MESSAGE_SIZE = 0x88E
 BULK_HS_FIXED_HEADER_SIZE = 0x0E
 FIXED_SENSOR_RECORD_SIZE = 0x22
 _FIXED_RECORD = struct.Struct("<17h")
+_HID_0X15_QUATERNION = struct.Struct("<4h")
+_HID_0X15_VECTOR = struct.Struct("<3h")
+
+STATIC_ONLY = "STATIC_ONLY"
+REAL_CAPTURE_VALIDATED = "REAL_CAPTURE_VALIDATED"
+UNKNOWN = "UNKNOWN"
+
+
+@dataclass(frozen=True)
+class Hid15Report:
+    """One real 64-byte HID report; header semantics remain partly unknown."""
+
+    identity_raw: bytes
+    counter_raw: int
+    flags: int
+    sample: SensorSample
+    trailing_payload: bytes
+    identity_status: str = UNKNOWN
+    counter_status: str = UNKNOWN
+    flags_status: str = UNKNOWN
 
 
 def resolve_outer_frame(payload: bytes, configured_mode: str = "auto") -> str:
@@ -81,6 +102,89 @@ def decode_fixed_sensor_record(record: bytes, sensor_id: int) -> SensorSample:
         accel=Vector3(ax / 2048.0, ay / 2048.0, az / 2048.0),
         gyro=Vector3(gx / 16.4, gy / 16.4, gz / 16.4),
         magnetometer=Vector3(mx / 12000.0, my / 12000.0, mz / 12000.0),
+        field_status=(
+            ("quaternion", STATIC_ONLY),
+            ("euler", STATIC_ONLY),
+            ("accel", STATIC_ONLY),
+            ("gyro", STATIC_ONLY),
+            ("magnetometer", STATIC_ONLY),
+        ),
+        slot=f"slot_{sensor_id}",
+        validation_status=STATIC_ONLY,
+    )
+
+
+def decode_hid_0x15_report(payload: bytes) -> Hid15Report:
+    """Decode only the fields proven by both fhusb.dll and the real C1 capture.
+
+    Static path: USBHidReadWorkerHs 0x10022994..0x10022a8c calls decoder
+    0x100070b0 with mode 3. Real fixture: capture SHA-256
+    837804311fe3996adb9176c5a8ec8014c9fdcbb46240b3b887ce5d072d8e4392.
+    """
+    if not isinstance(payload, bytes) or len(payload) != 64:
+        raise MalformedPayloadError("HID 0x15 report must be exactly 64 bytes")
+    if payload[0] != 0x15:
+        raise ProtocolNotDecodedError(
+            f"C1 HID message 0x{payload[0]:02x} is not the decoded 0x15 report"
+        )
+
+    flags = int.from_bytes(payload[7:11], "little")
+    if flags & 0x1D != 0x1D:
+        raise ProtocolNotDecodedError(
+            "HID 0x15 field profile is not real-capture validated"
+        )
+    if flags & 0x02:
+        raise ProtocolNotDecodedError(
+            "HID 0x15 matrix field is not real-capture validated"
+        )
+    cursor = 11
+    values: dict[str, object] = {}
+    statuses: list[tuple[str, str]] = [("sensor_id", UNKNOWN)]
+
+    def take(size: int) -> bytes:
+        nonlocal cursor
+        end = cursor + size
+        if end > len(payload):
+            raise MalformedPayloadError("HID 0x15 fields exceed the 64-byte report")
+        field = payload[cursor:end]
+        cursor = end
+        return field
+
+    if flags & 0x01:
+        raw = _HID_0X15_QUATERNION.unpack(take(8))
+        values["quaternion"] = Quaternion(
+            tuple(value / 16384.0 for value in raw), component_order="wxyz"
+        )
+        statuses.append(("quaternion", REAL_CAPTURE_VALIDATED))
+    if flags & 0x04:
+        raw = _HID_0X15_VECTOR.unpack(take(6))
+        values["accel"] = Vector3(*(value / 2048.0 for value in raw))
+        statuses.append(("accel", REAL_CAPTURE_VALIDATED))
+    if flags & 0x08:
+        raw = _HID_0X15_VECTOR.unpack(take(6))
+        values["gyro"] = Vector3(*(value / 16.4 for value in raw))
+        statuses.append(("gyro", REAL_CAPTURE_VALIDATED))
+    if flags & 0x10:
+        raw = _HID_0X15_VECTOR.unpack(take(6))
+        values["magnetometer"] = Vector3(*(value / 12000.0 for value in raw))
+        statuses.append(("magnetometer", REAL_CAPTURE_VALIDATED))
+    if flags & 0x20:
+        # The DLL proves this six-byte Euler field and /128 scale, but no real
+        # captured report set the flag. Preserve its boundary without decoding.
+        take(6)
+
+    return Hid15Report(
+        identity_raw=payload[1:5],
+        counter_raw=int.from_bytes(payload[5:7], "little"),
+        flags=flags,
+        sample=SensorSample(
+            sensor_id=0,
+            field_status=tuple(statuses),
+            slot="slot_0",
+            validation_status=REAL_CAPTURE_VALIDATED,
+            **values,
+        ),
+        trailing_payload=payload[cursor:],
     )
 
 
@@ -93,6 +197,15 @@ class C1ProtocolParser:
     ) -> list[SensorFrame]:
         if not isinstance(payload, bytes) or not payload:
             raise MalformedPayloadError("C1 payload must be non-empty bytes")
+        if payload[0] == 0x15:
+            report = decode_hid_0x15_report(payload)
+            return [
+                SensorFrame(
+                    timestamp_ns=time.time_ns() if timestamp_ns is None else timestamp_ns,
+                    frame_number=None,
+                    sensors=[report.sample],
+                )
+            ]
         if payload[0] != BULK_HS_FIXED_MESSAGE_ID:
             raise ProtocolNotDecodedError(
                 f"C1 message 0x{payload[0]:02x} is not decoded"

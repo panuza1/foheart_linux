@@ -48,7 +48,7 @@ def _read_string(device: Any, index: int, errors: list[str]) -> str | None:
     try:
         return usb.util.get_string(device, index)
     except (usb.core.USBError, ValueError) as exc:
-        errors.append(_permission_message(exc))
+        errors.append(f"USB string descriptor unavailable (non-fatal): {exc}")
         return None
 
 
@@ -97,4 +97,3 @@ def discover_foheart_devices() -> DiscoveryResult:
             )
         )
     return DiscoveryResult(devices, errors)
-

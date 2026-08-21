@@ -1,0 +1,688 @@
+{
+  "schema_version": 1,
+  "physical_reference": {
+    "name": "PHYSICAL TEST FRAME",
+    "TOP": "chosen face pointing upward in baseline",
+    "FRONT": "visible groove/line on the circular sensor, pointing away from the operator in baseline",
+    "RIGHT": "edge on operator's right in baseline"
+  },
+  "usb_safety": {
+    "payload": "70 + 63 zero bytes",
+    "out_endpoint": "0x01",
+    "in_endpoint": "0x81",
+    "polls_per_phase": 200,
+    "successful_64_byte_out_transfers": 800,
+    "any_other_payload": false
+  },
+  "baseline": {
+    "capture": "samples/motion_baseline.bin",
+    "poll_records": 200,
+    "decoded_frames": 200,
+    "sample_count": 200,
+    "duration_seconds": 1.115794781,
+    "report_rate_hz": 178.34820828042572,
+    "message_ids": {
+      "0x15": 200
+    },
+    "flags": {
+      "0x00008d1d": 197,
+      "0x0000ad1d": 3
+    },
+    "decode_errors": [],
+    "parser_regression": "REAL_CAPTURE_VALIDATED",
+    "euler": "STATIC_ONLY",
+    "sensor_identity": "slot_0",
+    "raw_quaternion_sign_flips_for_continuity": 0,
+    "raw_initial_quaternion": [
+      -0.2061767578125,
+      0.02593994140625,
+      -0.00421142578125,
+      -0.9781494140625
+    ],
+    "raw_final_quaternion": [
+      -0.20623779296875,
+      0.02447509765625,
+      -0.003173828125,
+      -0.9781494140625
+    ],
+    "analysis_initial_quaternion": [
+      -0.20621686728747288,
+      0.025821359647772865,
+      -0.004138253596782887,
+      -0.9781568053687762
+    ],
+    "analysis_final_quaternion": [
+      -0.206242948756522,
+      0.024521849883227843,
+      -0.00317700631343375,
+      -0.9781883415771235
+    ],
+    "quaternion_norm": {
+      "min": 0.9999391771982356,
+      "mean": 0.9999714735748079,
+      "max": 0.9999973010235366
+    },
+    "initial_to_final_angle_degrees": 0.18528421518880694,
+    "consecutive_angular_change_degrees": {
+      "min": 0.0,
+      "mean": 0.002846211333977927,
+      "max": 0.009889615087877106
+    },
+    "relative_quaternion": [
+      0.9999986928016281,
+      -0.0006717267850314128,
+      -0.0014702719628045084,
+      -3.845147920952807e-05
+    ],
+    "relative_axis_qx_qy_qz": [
+      -0.41543880569787817,
+      -0.9093102164297591,
+      -0.023780853996131942
+    ],
+    "relative_angle_degrees": 0.18528421519667518,
+    "dominant_quaternion": {
+      "axis": "QY",
+      "sign": "-",
+      "dominance_ratio": 2.1887946045440967
+    },
+    "gyro": {
+      "mean_vector": [
+        0.0012195121951219514,
+        0.0039634146341463415,
+        -0.001524390243902439
+      ],
+      "maximum_absolute_vector": [
+        0.3658536585365854,
+        0.24390243902439027,
+        0.3658536585365854
+      ],
+      "magnitude": {
+        "min": 0.0,
+        "mean": 0.13694618358067562,
+        "max": 0.4135567062881262
+      },
+      "peak_vector": [
+        0.3658536585365854,
+        -0.06097560975609757,
+        0.1829268292682927
+      ],
+      "peak_magnitude": 0.4135567062881262,
+      "motion_integral": [
+        0.005752332195121953,
+        0.01605712396341464,
+        -0.002469378170731706
+      ],
+      "dominant_motion": {
+        "axis": "GY",
+        "sign": "+",
+        "dominance_ratio": 2.791411104009479
+      }
+    },
+    "accel": {
+      "mean_vector": [
+        -0.04739990234375,
+        -0.005029296875,
+        1.0249609375
+      ],
+      "norm": {
+        "min": 1.017654035376352,
+        "mean": 1.0260733535947717,
+        "max": 1.033319996675955
+      }
+    },
+    "segmentation_thresholds": {
+      "gyro_magnitude": 0.6203350594321893,
+      "quaternion_step_degrees": 0.024369733692224248
+    },
+    "segmentation": {
+      "status": "NOT_APPLICABLE",
+      "thresholds": {
+        "gyro_magnitude": 0.6203350594321893,
+        "quaternion_step_degrees": 0.024369733692224248
+      },
+      "initial_stationary": true,
+      "motion": false,
+      "final_stationary": true,
+      "initial_samples": 200,
+      "motion_samples": 0,
+      "final_samples": 200,
+      "motion_start_index": null,
+      "motion_end_index": null
+    },
+    "quaternion_gyro_axis_agreement": true,
+    "quaternion_gyro_sign_agreement": false,
+    "confidence": "UNKNOWN"
+  },
+  "motions": {
+    "table_yaw_cw": {
+      "capture": "samples/motion_table_yaw_cw.bin",
+      "poll_records": 200,
+      "decoded_frames": 200,
+      "sample_count": 200,
+      "duration_seconds": 1.128699672,
+      "report_rate_hz": 176.30907932079208,
+      "message_ids": {
+        "0x15": 200
+      },
+      "flags": {
+        "0x00008d1d": 196,
+        "0x0000ad1d": 3,
+        "0x0000ed1d": 1
+      },
+      "decode_errors": [],
+      "parser_regression": "REAL_CAPTURE_VALIDATED",
+      "euler": "STATIC_ONLY",
+      "sensor_identity": "slot_0",
+      "raw_quaternion_sign_flips_for_continuity": 0,
+      "raw_initial_quaternion": [
+        -0.8455810546875,
+        0.01397705078125,
+        -0.011474609375,
+        -0.533447265625
+      ],
+      "raw_final_quaternion": [
+        -0.84564208984375,
+        0.0120849609375,
+        -0.0123291015625,
+        -0.53338623046875
+      ],
+      "analysis_initial_quaternion": [
+        -0.8456440295553738,
+        0.01387997735896351,
+        -0.011530025167582265,
+        -0.5334421993295054
+      ],
+      "analysis_final_quaternion": [
+        -0.845659862126569,
+        0.012198220373008451,
+        -0.012301983068200418,
+        -0.53344096413792
+      ],
+      "quaternion_norm": {
+        "min": 0.99992453022129,
+        "mean": 0.9999599848760596,
+        "max": 0.9999943263667804
+      },
+      "initial_to_final_angle_degrees": 0.21205565808164403,
+      "consecutive_angular_change_degrees": {
+        "min": 0.0,
+        "mean": 0.002802597425760169,
+        "max": 0.011933610571048437
+      },
+      "relative_quaternion": [
+        0.999998287761122,
+        0.0018341966721512615,
+        -0.0002444839611128926,
+        2.0615164567472366e-05
+      ],
+      "relative_axis_qx_qy_qz": [
+        0.9911717427484392,
+        -0.13211538189418512,
+        0.011140118669729212
+      ],
+      "relative_angle_degrees": 0.21205565808164403,
+      "dominant_quaternion": {
+        "axis": "QX",
+        "sign": "+",
+        "dominance_ratio": 7.5023190224912355
+      },
+      "gyro": {
+        "mean_vector": [
+          -0.0012195121951219514,
+          -0.0006097560975609759,
+          -0.005182926829268294
+        ],
+        "maximum_absolute_vector": [
+          0.30487804878048785,
+          0.3658536585365854,
+          0.30487804878048785
+        ],
+        "magnitude": {
+          "min": 0.0,
+          "mean": 0.14158222325763986,
+          "max": 0.426829268292683
+        },
+        "peak_vector": [
+          0.1829268292682927,
+          -0.3658536585365854,
+          0.12195121951219513
+        ],
+        "peak_magnitude": 0.426829268292683,
+        "motion_integral": [
+          -0.007085222682926828,
+          -0.0049403939634146375,
+          -0.013712215000000003
+        ],
+        "dominant_motion": {
+          "axis": "GZ",
+          "sign": "-",
+          "dominance_ratio": 1.9353259048642402
+        }
+      },
+      "accel": {
+        "mean_vector": [
+          -0.033994140625,
+          -0.0041845703125,
+          1.02612548828125
+        ],
+        "norm": {
+          "min": 1.0185684978540013,
+          "mean": 1.0267017329357266,
+          "max": 1.0347011501433794
+        }
+      },
+      "segmentation_thresholds": {
+        "gyro_magnitude": 0.6203350594321893,
+        "quaternion_step_degrees": 0.024369733692224248
+      },
+      "segmentation": {
+        "status": "UNKNOWN",
+        "thresholds": {
+          "gyro_magnitude": 0.6203350594321893,
+          "quaternion_step_degrees": 0.024369733692224248
+        },
+        "initial_stationary": false,
+        "motion": false,
+        "final_stationary": false,
+        "initial_samples": 0,
+        "motion_samples": 0,
+        "final_samples": 0,
+        "motion_start_index": null,
+        "motion_end_index": null
+      },
+      "quaternion_gyro_axis_agreement": false,
+      "quaternion_gyro_sign_agreement": false,
+      "confidence": "UNKNOWN"
+    },
+    "forward_tilt": {
+      "capture": "samples/motion_forward_tilt.bin",
+      "poll_records": 200,
+      "decoded_frames": 200,
+      "sample_count": 200,
+      "duration_seconds": 1.176799962,
+      "report_rate_hz": 169.10265671813474,
+      "message_ids": {
+        "0x15": 200
+      },
+      "flags": {
+        "0x00008c1d": 5,
+        "0x00008d1d": 191,
+        "0x0000ad1d": 3,
+        "0x0000ed1d": 1
+      },
+      "decode_errors": [],
+      "parser_regression": "REAL_CAPTURE_VALIDATED",
+      "euler": "STATIC_ONLY",
+      "sensor_identity": "slot_0",
+      "raw_quaternion_sign_flips_for_continuity": 0,
+      "raw_initial_quaternion": [
+        -0.65899658203125,
+        0.410400390625,
+        0.19964599609375,
+        -0.5977783203125
+      ],
+      "raw_final_quaternion": [
+        -0.673583984375,
+        0.4139404296875,
+        0.19525146484375,
+        -0.580322265625
+      ],
+      "analysis_initial_quaternion": [
+        -0.6590287369114857,
+        0.41042041557773734,
+        0.1996557375601991,
+        -0.5978074881273586
+      ],
+      "analysis_final_quaternion": [
+        -0.6735977495395016,
+        0.4139488888525643,
+        0.19525545494534846,
+        -0.5803341249204043
+      ],
+      "quaternion_norm": {
+        "min": 0.9999036183699792,
+        "mean": 0.9999448179764268,
+        "max": 0.9999908748597798
+      },
+      "initial_to_final_angle_degrees": 2.685974116079676,
+      "consecutive_angular_change_degrees": {
+        "min": 0.005696865800931657,
+        "mean": 0.03272409940021169,
+        "max": 0.09383574602498714
+      },
+      "relative_quaternion": [
+        0.9997253064192707,
+        0.0027959196101050576,
+        0.015089472389776731,
+        -0.017714467573931136
+      ],
+      "relative_axis_qx_qy_qz": [
+        0.11929308052037844,
+        0.6438202437215369,
+        -0.7558205175266807
+      ],
+      "relative_angle_degrees": 2.685974116080219,
+      "dominant_quaternion": {
+        "axis": "QZ",
+        "sign": "-",
+        "dominance_ratio": 1.1739620257321168
+      },
+      "gyro": {
+        "mean_vector": [
+          0.005182926829268294,
+          0.7957317073170732,
+          -0.9060975609756098
+        ],
+        "maximum_absolute_vector": [
+          4.75609756097561,
+          3.353658536585366,
+          4.085365853658537
+        ],
+        "magnitude": {
+          "min": 0.8815141643171318,
+          "mean": 2.7926307154680297,
+          "max": 6.11795370408134
+        },
+        "peak_vector": [
+          4.085365853658537,
+          -2.0121951219512195,
+          -4.085365853658537
+        ],
+        "peak_magnitude": 6.11795370408134,
+        "motion_integral": [
+          0.7577466128658537,
+          0.8303698484146339,
+          -0.3369728623780488
+        ],
+        "dominant_motion": {
+          "axis": "GY",
+          "sign": "+",
+          "dominance_ratio": 1.0958410559885101
+        }
+      },
+      "accel": {
+        "mean_vector": [
+          -0.22092041015625,
+          -0.79321044921875,
+          0.583564453125
+        ],
+        "norm": {
+          "min": 0.9838532775799497,
+          "mean": 1.009322375488138,
+          "max": 1.026562527869934
+        }
+      },
+      "segmentation_thresholds": {
+        "gyro_magnitude": 0.6203350594321893,
+        "quaternion_step_degrees": 0.024369733692224248
+      },
+      "segmentation": {
+        "status": "PARTIAL",
+        "thresholds": {
+          "gyro_magnitude": 0.6203350594321893,
+          "quaternion_step_degrees": 0.024369733692224248
+        },
+        "initial_stationary": false,
+        "motion": true,
+        "final_stationary": false,
+        "initial_samples": 1,
+        "motion_samples": 199,
+        "final_samples": 0,
+        "motion_start_index": 1,
+        "motion_end_index": 199
+      },
+      "quaternion_gyro_axis_agreement": false,
+      "quaternion_gyro_sign_agreement": false,
+      "confidence": "PARTIAL"
+    },
+    "right_roll": {
+      "capture": "samples/motion_right_roll.bin",
+      "poll_records": 200,
+      "decoded_frames": 200,
+      "sample_count": 200,
+      "duration_seconds": 1.012902918,
+      "report_rate_hz": 196.46502785571005,
+      "message_ids": {
+        "0x15": 200
+      },
+      "flags": {
+        "0x00008c1d": 6,
+        "0x00008d1d": 190,
+        "0x0000ad1d": 3,
+        "0x0000ed1d": 1
+      },
+      "decode_errors": [],
+      "parser_regression": "REAL_CAPTURE_VALIDATED",
+      "euler": "STATIC_ONLY",
+      "sensor_identity": "slot_0",
+      "raw_quaternion_sign_flips_for_continuity": 0,
+      "raw_initial_quaternion": [
+        -0.86376953125,
+        -0.0716552734375,
+        -0.4810791015625,
+        0.13116455078125
+      ],
+      "raw_final_quaternion": [
+        -0.85833740234375,
+        -0.074951171875,
+        -0.4913330078125,
+        0.12701416015625
+      ],
+      "analysis_initial_quaternion": [
+        -0.8638241600644572,
+        -0.07165980525124878,
+        -0.4811095272490144,
+        0.1311728462392961
+      ],
+      "analysis_final_quaternion": [
+        -0.858379680355041,
+        -0.07495486364758518,
+        -0.49135720876470734,
+        0.1270204163278703
+      ],
+      "quaternion_norm": {
+        "min": 0.999912297232551,
+        "mean": 0.9999543611257325,
+        "max": 0.9999890364105515
+      },
+      "initial_to_final_angle_degrees": 1.461927957238118,
+      "consecutive_angular_change_degrees": {
+        "min": 0.0,
+        "mean": 0.031180926585857166,
+        "max": 0.1815851240952442
+      },
+      "relative_quaternion": [
+        0.9999186212901212,
+        -0.00010548973613823398,
+        0.012201370444159938,
+        0.0037237385063156186
+      ],
+      "relative_axis_qx_qy_qz": [
+        -0.008268917209248244,
+        0.956416479323806,
+        0.29188892251341503
+      ],
+      "relative_angle_degrees": 1.461927957237121,
+      "dominant_quaternion": {
+        "axis": "QY",
+        "sign": "+",
+        "dominance_ratio": 3.2766453453876783
+      },
+      "gyro": {
+        "mean_vector": [
+          -0.05365853658536586,
+          0.8097560975609757,
+          0.1554878048780488
+        ],
+        "maximum_absolute_vector": [
+          4.878048780487806,
+          16.097560975609756,
+          9.939024390243903
+        ],
+        "magnitude": {
+          "min": 0.2794253472534049,
+          "mean": 2.9215528173845797,
+          "max": 18.91875770811399
+        },
+        "peak_vector": [
+          0.06097560975609757,
+          16.097560975609756,
+          9.939024390243903
+        ],
+        "peak_magnitude": 18.91875770811399,
+        "motion_integral": [
+          0.08784185542682924,
+          0.0001229306707317239,
+          0.050383550365853694
+        ],
+        "dominant_motion": {
+          "axis": "GX",
+          "sign": "+",
+          "dominance_ratio": 1.7434629911742396
+        }
+      },
+      "accel": {
+        "mean_vector": [
+          -0.86949462890625,
+          0.003984375,
+          0.5253564453125
+        ],
+        "norm": {
+          "min": 0.9670046188181066,
+          "mean": 1.0160635224932337,
+          "max": 1.0445002480630319
+        }
+      },
+      "segmentation_thresholds": {
+        "gyro_magnitude": 0.6203350594321893,
+        "quaternion_step_degrees": 0.024369733692224248
+      },
+      "segmentation": {
+        "status": "PARTIAL",
+        "thresholds": {
+          "gyro_magnitude": 0.6203350594321893,
+          "quaternion_step_degrees": 0.024369733692224248
+        },
+        "initial_stationary": false,
+        "motion": true,
+        "final_stationary": false,
+        "initial_samples": 1,
+        "motion_samples": 199,
+        "final_samples": 0,
+        "motion_start_index": 1,
+        "motion_end_index": 199
+      },
+      "quaternion_gyro_axis_agreement": false,
+      "quaternion_gyro_sign_agreement": false,
+      "confidence": "PARTIAL"
+    }
+  },
+  "axis_mapping": {
+    "status": "UNKNOWN",
+    "mapping": {},
+    "sign_mapping": {},
+    "handedness": "UNKNOWN",
+    "confidence": "UNKNOWN"
+  },
+  "latest_offline_review": {
+    "date": "2026-08-21",
+    "new_usb_activity": false,
+    "artifact_selection": {
+      "authoritative_session": "motion_baseline.bin at 12:31 through motion_right_roll.bin at 12:35, followed by this summary",
+      "excluded_older_file": "motion_baseline_failed_backend.bin",
+      "excluded_file_facts": "20408 bytes, 200 valid 0x15 reports, SHA-256 61d2ad05c2017478d20bb643fbd5b9bfca7254464d9b3431bcb1fbe97ae709e7",
+      "exclusion_reason": "older incomplete session; filename is not treated as protocol evidence"
+    },
+    "capture_integrity": {
+      "motion_baseline.bin": {
+        "size_bytes": 20408,
+        "sha256": "1ef73cc613a5f3d0a40e734c11c28485efac5694a8b05801e3e7f3488f3f958d",
+        "poll_records": 200,
+        "in_reports": 200,
+        "timeouts": 0,
+        "errors": 0
+      },
+      "motion_table_yaw_cw.bin": {
+        "size_bytes": 20408,
+        "sha256": "1c216b0fee34ae397414b6443b4e735f7dea9688349c4b3848617734ff9e8ef2",
+        "poll_records": 200,
+        "in_reports": 200,
+        "timeouts": 0,
+        "errors": 0
+      },
+      "motion_forward_tilt.bin": {
+        "size_bytes": 20408,
+        "sha256": "2ee5064d0e6ba891ebf0dd0cf0159d51bcb6c756c88f040eb218f7eed010ebf3",
+        "poll_records": 200,
+        "in_reports": 200,
+        "timeouts": 0,
+        "errors": 0
+      },
+      "motion_right_roll.bin": {
+        "size_bytes": 20408,
+        "sha256": "924127d21dda69c711f191949ea5c1c55acc4dd803fcde38be3ff73bda31aa3b",
+        "poll_records": 200,
+        "in_reports": 200,
+        "timeouts": 0,
+        "errors": 0
+      }
+    },
+    "baseline_reference_pose_deltas": {
+      "TABLE_YAW_CW": {
+        "relative_quaternion": [0.6965978355999078, 0.02839432445511672, -0.0012381953951343984, -0.7168986571674022],
+        "angle_degrees": 91.69063759829363,
+        "axis_qx_qy_qz": [0.03957607760653283, -0.001725799714916623, -0.999215069790596],
+        "dominant_axis": "QZ",
+        "sign": "-",
+        "confidence": "PARTIAL: target pose is clear, but the yaw motion and gyro response occurred outside the capture"
+      },
+      "FORWARD_TILT": {
+        "relative_quaternion": [0.7191001522520637, -0.2677560087051801, 0.3484124514987796, -0.5383404633444718],
+        "angle_degrees": 88.03952553667001,
+        "axis_qx_qy_qz": [-0.3853123101649799, 0.5013803694880127, -0.7746948745973412],
+        "dominant_axis": "QZ",
+        "sign": "-",
+        "confidence": "UNKNOWN for a single physical axis: the delta is strongly mixed and the capture has no stationary bookends"
+      },
+      "RIGHT_ROLL": {
+        "relative_quaternion": [0.05056137950965922, 0.5134152256517326, 0.029176421173002343, -0.8561524919186978],
+        "angle_degrees": 174.2036212091638,
+        "axis_qx_qy_qz": [0.5140727475857088, 0.029213786907241766, -0.8572489514978822],
+        "dominant_axis": "QZ",
+        "sign": "-",
+        "confidence": "UNKNOWN for a single physical axis: the quaternion delta conflicts with the approximately 60 degree gravity tilt"
+      }
+    },
+    "diagnostic_cross_capture_delta": {
+      "TABLE_YAW_CW_to_FORWARD_TILT": {
+        "relative_quaternion": [0.8788250112298457, -0.45737960847427306, 0.036354009234498996, 0.13095373000170785],
+        "angle_degrees": 56.9981030988414,
+        "axis_qx_qy_qz": [-0.9585772946143438, 0.07619082087336011, 0.2744531454811352],
+        "note": "QX-dominant, but diagnostic only because TABLE_YAW_CW was not the declared starting pose for FORWARD_TILT"
+      }
+    },
+    "gravity_evidence": {
+      "baseline_accel_mean_ax_ay_az": [-0.04739990234375, -0.005029296875, 1.0249609375],
+      "dominant_component_top_up": "+AZ",
+      "forward_tilt_accel_mean_ax_ay_az": [-0.22092041015625, -0.79321044921875, 0.583564453125],
+      "right_roll_accel_mean_ax_ay_az": [-0.86949462890625, 0.003984375, 0.5253564453125]
+    },
+    "controlled_motion": "PARTIAL",
+    "candidate_physical_to_sensor_axis_mapping": {
+      "physical_UP_rotation": "QZ candidate; gyro axis UNKNOWN",
+      "physical_RIGHT_rotation": "UNKNOWN",
+      "physical_FRONT_rotation": "QY/GY candidate from the small in-capture roll segment"
+    },
+    "candidate_sign_mapping": {
+      "TABLE_YAW_CW": "negative physical UP rotation -> -QZ candidate",
+      "FORWARD_TILT": "UNKNOWN",
+      "RIGHT_ROLL": "right-side-down motion -> +QY/+GY candidate"
+    },
+    "candidate_handedness": "UNKNOWN",
+    "readiness": {
+      "axis_conversion_layer": "NO",
+      "calibration": "NO",
+      "skeleton": "NO"
+    }
+  }
+}

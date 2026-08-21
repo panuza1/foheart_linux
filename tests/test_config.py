@@ -122,3 +122,32 @@ def test_experimental_stream_mode_is_refused():
     config = load_config(overrides={"stream": {"mode": "experimental"}})
     with pytest.raises(ConfigError, match="start-stream command is not validated"):
         require_read_only(config)
+
+
+def test_pipeline_config_is_safe_and_rejects_real_g1_or_improper_axes():
+    config = load_config()
+    assert config.g1.mode == "mujoco"
+    assert config.body_mapping.role_to_slot == {}
+    assert config.frames.status == "CONFIGURED"
+    with pytest.raises(ConfigError, match="real G1 modes are forbidden"):
+        load_config(overrides={"g1": {"mode": "real"}})
+    with pytest.raises(ConfigError, match="proper right-handed"):
+        load_config(
+            overrides={
+                "frames": {
+                    "sensor_to_body_matrix": [[-1, 0, 0], [0, 1, 0], [0, 0, 1]]
+                }
+            }
+        )
+
+
+def test_body_mapping_rejects_duplicate_configured_slots():
+    with pytest.raises(ConfigError, match="multiple roles"):
+        load_config(
+            overrides={
+                "body_mapping": {
+                    "torso": "slot_0",
+                    "left_upper_arm": "slot_0",
+                }
+            }
+        )

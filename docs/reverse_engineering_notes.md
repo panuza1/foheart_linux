@@ -9,7 +9,9 @@ Quaternion-use correlation binary: `MotionVenus_3.2.0_setup.exe`, SHA-256
 `473692ab1ea10dbcda8cb1c7ef996b7b0cbf609099ba57c5bab89f02553b7e0e`.
 
 Analysis used `sha256sum`, `strings`, and GNU `objdump -p/-s/-d -M intel`.
-Neither binary was executed or modified. Hardware was not connected.
+Neither binary was executed or modified. The original analysis was static; the
+2026-08-21 validation later sent only the exact authorized 64-byte `0x70` poll
+to the connected C1.
 
 ## Focused function inventory
 
@@ -19,6 +21,7 @@ Neither binary was executed or modified. Hardware was not connected.
 | `fhusb.dll` | `0x100220b0` | `USBHidReadWorkerHs`, confirmed by its start-log string xref |
 | `fhusb.dll` | `0x10023780`, `0x100238a0`, `0x10023920`, `0x10023980` | libusb read/write wrappers |
 | `fhusb.dll` | `0x10006d30` | fixed `0x22` raw-record decoder |
+| `fhusb.dll` | `0x100070b0` | flag-driven sensor decoder; mode 3 used by real HID `0x15` reports |
 | `fhusb.dll` | `0x10007020` | alternate `0x1b` decoder dispatch target (not fully decoded) |
 | `fhusb.dll` | `0x10009170` | decoded `SensorFrame` constructor |
 | `fhusb.dll` | `0x1000a780`, `0x1000b010` | `MotionCaptureSuit::distributeSF`, quaternion getter |
@@ -47,6 +50,23 @@ USBBulkReadWorkerHs @ 0x100204e0
           -> decoded-frame callback path
              -> MotionCaptureSuit::distributeSF @ 0x1000a780
              -> getLastQuatByIndexInSuit @ 0x1000b010
+```
+
+Real-validated HID receive path:
+
+```text
+USBHidReadWorkerHs @ 0x100220b0
+  -> clear/send 64-byte 0x70 poll @ 0x1002229a..0x100222f5
+  -> interrupt IN 0x81, 64 bytes @ 0x1002237e..0x100223ac
+  -> byte-0 dispatch
+       -> code 0x15 comparison @ 0x10022986..0x10022997
+       -> mode-3 decoder @ 0x100070b0, call @ 0x10022a70..0x10022a8c
+          -> 11-byte header
+          -> flag bit 0: quaternion
+          -> flag bit 2: accel
+          -> flag bit 3: gyro
+          -> flag bit 4: magnetometer
+       -> decoded-frame callback path
 ```
 
 RTTRANS construction path:
@@ -163,6 +183,89 @@ byte 0 equal to `0x11` and jumps to the loop end. An immediately following block
 at `0x100225f7` requires the same byte to equal `0x11` before copying `0x88e`;
 that block is unreachable in ordinary control flow.
 
+## Real HID `0x15` capture and decoder
+
+The boundary-preserving real capture contains 200 poll attempts and 200 exact
+64-byte IN reports, all with byte 0 equal to `0x15`. Its SHA-256 is
+`837804311fe3996adb9176c5a8ec8014c9fdcbb46240b3b887ce5d072d8e4392`.
+No `0x74 0x01`, `0x13`, or `0x22` report occurred.
+
+Mode 3 of `0x100070b0` copies 11 header bytes. In the captured low-bit profile
+`flags & 0x3f == 0x1d`, the field sequence is:
+
+```text
+00        message ID 0x15
+01..04    identity-like raw dword; semantics UNKNOWN
+05..06    counter-like raw uint16; semantics UNKNOWN
+07..0a    flags uint32 little-endian
+0b..12    quaternion W/X/Y/Z, four int16 / 16384
+13..18    accel X/Y/Z, three int16 / 2048
+19..1e    gyro X/Y/Z, three int16 / float32 16.4
+1f..24    mag X/Y/Z, three int16 / 12000
+25..3f    optional fields / padding; UNKNOWN
+```
+
+The decoder does not receive a shifted pointer and no accumulator appears on
+this branch. For the observed message, one USB HID report is one compact
+logical sensor frame. Byte 0 is FOHEART framing, not a separate HID report ID.
+The meaning and length of the optional tail remain unknown.
+
+Across 200 unrenormalized decoded quaternions, norms ranged from
+`0.99993498` to `0.99999377`. Accel magnitude was `0.9686..0.9867`, gyro
+magnitude `0..0.4312`, and magnetometer magnitude `0.6061..0.6284`. The
+orientation changed only `0.02211` degrees first-to-last, consistent with the
+uncoordinated sensor remaining stationary. This validates the captured field
+boundaries/scales but not physical axes or motion correlation.
+
+The Euler flag (bit 5) was absent in all 200 reports. The implementation leaves
+Euler undecoded and marks it STATIC_ONLY. Bytes `01..04` are retained as raw
+identity-like data, but the exposed sensor name is only capture-local `slot_0`.
+
+## Controlled-motion offline review
+
+Offline analysis now implements WXYZ norm, conjugate, inverse, Hamilton product,
+`inverse(start) * end` relative rotation, q/-q continuity, shortest distance,
+angular distance, and shortest axis-angle conversion. Raw capture values are
+never sign-flipped or normalized in place; continuity-adjusted quaternions are
+separate derived values, and raw norms remain the sensor-quality measurement.
+
+Segmentation thresholds are derived from a stationary baseline as the greater
+of `1.5 * observed maximum` and `mean + 6 * population standard deviation` for
+gyro magnitude and consecutive quaternion angle. A motion run must contain at
+least three consecutive active samples; ten samples are required on each side
+to label the stationary regions present. These rules were verified with
+synthetic rotations but have not been validated on the real sensor.
+
+The first guided attempt did stop with `No backend available`, but it is now
+historical: a later session produced four valid 200-record captures. Each has
+200 successful 64-byte `0x15` reports, zero timeout/error, and no Euler bit.
+
+The stationary baseline gives quaternion norm `0.999939..0.999997`, mean/max
+step `0.002846/0.009890` degrees, gyro magnitude mean/max
+`0.136946/0.413557`, and accel mean
+`(-0.047400, -0.005029, +1.024961)`. +AZ is therefore the dominant decoded
+gravity component for the defined TOP-up pose.
+
+Motion timing limits the result. The yaw file contains the post-yaw pose but no
+motion; its mean is `91.6906` degrees from baseline around axis
+`(QX,QY,QZ)=(+0.03958,-0.00173,-0.99922)`. Tilt and roll are active almost
+from their first sample through their last, so neither contains the requested
+stationary-before/after regions. Their within-file changes are only `2.6860`
+and `1.4619` degrees. The roll fragment is QY-positive and has a GY-positive
+peak, but integrated gyro direction differs; the tilt axes are mixed.
+
+Consequently controlled motion is PARTIAL, not CONTROLLED_MOTION_VALIDATED as
+a complete coordinate mapping. QZ is a candidate for physical UP-axis rotation;
+QY/GY is a weaker candidate for physical FRONT-axis rotation. Physical RIGHT
+mapping, sign convention, quaternion/gyro agreement, and handedness remain
+UNKNOWN.
+
+Downstream software does not promote those candidates. It applies an explicit
+`CONFIGURED` proper rotation, retains raw WXYZ separately, and can continue
+through neutral calibration, configured body mapping, torso-local FK, the
+existing G1 IK, and MuJoCo. The full synthetic seven-role path is
+`SIM_VALIDATED`; real multi-sensor mapping is still pending.
+
 ## Message codes
 
 Directly correlated inner MC1507 request values are:
@@ -215,7 +318,9 @@ The 1 Hz method does not initialize all 11 bytes in its observed function.
 These are rate configuration messages, but static code does not establish that
 they are necessary or sufficient to start live streaming. Stream content flags,
 sensor masks, target semantics, initialization ordering, and semantic response
-remain unresolved. No write was implemented.
+remain unresolved. No RTTRANS or `0x73` write was implemented or sent. The only
+implemented hardware write is guarded byte-for-byte equality with the exact
+64-byte `0x70` HID poll.
 
 ## Checksum search
 

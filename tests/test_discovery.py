@@ -130,3 +130,10 @@ def test_permission_error_behavior(monkeypatch):
     result = discovery.discover_foheart_devices()
     assert result.devices == []
     assert "permission denied" in result.errors[0].lower()
+
+
+def test_string_descriptor_failure_is_non_fatal(monkeypatch):
+    errors = []
+    monkeypatch.setattr(discovery.usb.util, "get_string", lambda *_: (_ for _ in ()).throw(ValueError("The device has no langid")))
+    assert discovery._read_string(object(), 1, errors) is None
+    assert errors == ["USB string descriptor unavailable (non-fatal): The device has no langid"]

@@ -40,12 +40,15 @@ class ConfigurationDescriptor:
 
 @dataclass(frozen=True)
 class EndpointSelection:
+    configuration_value: int
     transfer_type: str
     interface_number: int
     alternate_setting: int
     in_endpoint: int
     out_endpoint: int | None
     read_size: int
+    in_max_packet_size: int
+    out_max_packet_size: int | None
 
 
 class DescriptorSelectionError(RuntimeError):
@@ -139,12 +142,17 @@ def select_endpoints(
                 ):
                     candidates.append(
                         EndpointSelection(
+                            configuration_value=configuration.value,
                             transfer_type=candidate_type,
                             interface_number=interface.number,
                             alternate_setting=interface.alternate_setting,
                             in_endpoint=ins[0].address,
                             out_endpoint=outs[0].address if outs else None,
                             read_size=read_size or ins[0].max_packet_size,
+                            in_max_packet_size=ins[0].max_packet_size,
+                            out_max_packet_size=(
+                                outs[0].max_packet_size if outs else None
+                            ),
                         )
                     )
     if len(candidates) != 1:

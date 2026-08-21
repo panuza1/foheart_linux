@@ -6,14 +6,19 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
+import numpy as np
 import yaml
 
 from foheart.constants import ROUTER_PIDS
+from foheart.mocap.suit import FULL_BODY_ROLES, BodyProfile, roles_for_profile
 
 USB_MODES = ("auto", "bulk", "hid")
 OUTER_FRAME_MODES = ("auto", "fixed_0x13", "raw")
 SENSOR_ID_MODES = ("auto", "loop_index", "decoded_index", "unknown")
 STREAM_MODES = ("read_only", "experimental")
+FRAME_STATUSES = ("CONFIGURED", "MANUAL_DERIVED", "PARTIAL")
+VIEWER_CAMERAS = ("perspective", "front", "side")
+BODY_PROFILES = tuple(profile.value for profile in BodyProfile)
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "default.yaml"
 
 _DEFAULTS: dict[str, dict[str, Any]] = {
@@ -27,12 +32,79 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "read_size": None,
     },
     "protocol": {"outer_frame": "auto", "sensor_id_mode": "auto"},
-    "stream": {"mode": "read_only"},
+    "stream": {"mode": "read_only", "stale_after_ms": 100.0},
     "monitor": {
         "show_raw": False,
         "show_euler": True,
         "show_quaternion": True,
         "show_imu": True,
+    },
+    "frames": {
+        "version": 1,
+        "sensor_to_body_matrix": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
+        "status": "CONFIGURED",
+    },
+    "body_mapping": {role: None for role in FULL_BODY_ROLES},
+    "calibration": {
+        "file": None,
+        "duration_s": 2.0,
+        "minimum_samples": 20,
+        "maximum_angular_deviation_deg": 3.0,
+        "maximum_gyro_magnitude": 5.0,
+    },
+    "skeleton": {
+        "shoulder_width_m": 0.38,
+        "left_upper_arm_m": 0.30,
+        "left_forearm_m": 0.26,
+        "left_hand_m": 0.10,
+        "right_upper_arm_m": 0.30,
+        "right_forearm_m": 0.26,
+        "right_hand_m": 0.10,
+    },
+    "full_body": {
+        "shoulder_width_m": 0.38,
+        "left_upper_arm_m": 0.30,
+        "left_forearm_m": 0.26,
+        "left_hand_m": 0.10,
+        "right_upper_arm_m": 0.30,
+        "right_forearm_m": 0.26,
+        "right_hand_m": 0.10,
+        "torso_length_m": 0.50,
+        "neck_length_m": 0.10,
+        "head_length_m": 0.18,
+        "hip_width_m": 0.30,
+        "left_thigh_m": 0.42,
+        "left_lower_leg_m": 0.43,
+        "left_foot_m": 0.25,
+        "right_thigh_m": 0.42,
+        "right_lower_leg_m": 0.43,
+        "right_foot_m": 0.25,
+    },
+    "retarget": {
+        "human_reach_m": 0.56,
+        "g1_reach_m": 0.321,
+        "max_robot_reach_m": 0.43,
+        "workspace_radius_m": 1.0,
+    },
+    "filter": {
+        "position_alpha": 0.2,
+        "orientation_alpha": 0.2,
+        "max_translation_rate_m_s": 0.8,
+        "max_angular_rate_deg_s": 180.0,
+    },
+    "g1": {
+        "mode": "mujoco",
+        "xr_root": None,
+        "mujoco_model": None,
+        "max_joint_delta_rad": 0.35,
+        "steps_per_pose": 250,
+    },
+    "viewer": {
+        "fps": 30.0,
+        "camera": "perspective",
+        "show_segment_axes": False,
+        "show_sensors": False,
+        "mode": "upper",
     },
 }
 
@@ -61,6 +133,7 @@ class ProtocolConfig:
 @dataclass(frozen=True)
 class StreamConfig:
     mode: str = "read_only"
+    stale_after_ms: float = 100.0
 
 
 @dataclass(frozen=True)
@@ -72,11 +145,115 @@ class MonitorConfig:
 
 
 @dataclass(frozen=True)
+class FramesConfig:
+    sensor_to_body_matrix: tuple[tuple[float, float, float], ...]
+    status: str = "CONFIGURED"
+    version: int = 1
+
+
+@dataclass(frozen=True)
+class BodyMappingConfig:
+    role_to_slot: Mapping[str, str]
+    profile: str = BodyProfile.UPPER.value
+
+
+@dataclass(frozen=True)
+class CalibrationConfig:
+    file: str | None = None
+    duration_s: float = 2.0
+    minimum_samples: int = 20
+    maximum_angular_deviation_deg: float = 3.0
+    maximum_gyro_magnitude: float = 5.0
+
+
+@dataclass(frozen=True)
+class SkeletonConfig:
+    shoulder_width_m: float
+    left_upper_arm_m: float
+    left_forearm_m: float
+    left_hand_m: float
+    right_upper_arm_m: float
+    right_forearm_m: float
+    right_hand_m: float
+
+
+@dataclass(frozen=True)
+class FullBodyConfig:
+    shoulder_width_m: float
+    left_upper_arm_m: float
+    left_forearm_m: float
+    left_hand_m: float
+    right_upper_arm_m: float
+    right_forearm_m: float
+    right_hand_m: float
+    torso_length_m: float
+    neck_length_m: float
+    head_length_m: float
+    hip_width_m: float
+    left_thigh_m: float
+    left_lower_leg_m: float
+    left_foot_m: float
+    right_thigh_m: float
+    right_lower_leg_m: float
+    right_foot_m: float
+
+
+@dataclass(frozen=True)
+class RetargetConfig:
+    human_reach_m: float
+    g1_reach_m: float
+    max_robot_reach_m: float
+    workspace_radius_m: float
+
+
+@dataclass(frozen=True)
+class FilterConfig:
+    position_alpha: float
+    orientation_alpha: float
+    max_translation_rate_m_s: float
+    max_angular_rate_deg_s: float
+
+
+@dataclass(frozen=True)
+class G1Config:
+    mode: str
+    xr_root: str | None
+    mujoco_model: str | None
+    max_joint_delta_rad: float
+    steps_per_pose: int
+
+
+@dataclass(frozen=True)
+class ViewerConfig:
+    fps: float
+    camera: str
+    show_segment_axes: bool
+    show_sensors: bool
+    mode: str
+
+
+@dataclass(frozen=True)
 class RuntimeConfig:
     usb: USBConfig = field(default_factory=USBConfig)
     protocol: ProtocolConfig = field(default_factory=ProtocolConfig)
     stream: StreamConfig = field(default_factory=StreamConfig)
     monitor: MonitorConfig = field(default_factory=MonitorConfig)
+    frames: FramesConfig = field(
+        default_factory=lambda: FramesConfig(((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)))
+    )
+    body_mapping: BodyMappingConfig = field(default_factory=lambda: BodyMappingConfig({}))
+    calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
+    skeleton: SkeletonConfig = field(default_factory=lambda: SkeletonConfig(0.38, 0.30, 0.26, 0.10, 0.30, 0.26, 0.10))
+    full_body: FullBodyConfig = field(
+        default_factory=lambda: FullBodyConfig(
+            0.38, 0.30, 0.26, 0.10, 0.30, 0.26, 0.10,
+            0.50, 0.10, 0.18, 0.30, 0.42, 0.43, 0.25, 0.42, 0.43, 0.25,
+        )
+    )
+    retarget: RetargetConfig = field(default_factory=lambda: RetargetConfig(0.56, 0.321, 0.43, 1.0))
+    filter: FilterConfig = field(default_factory=lambda: FilterConfig(0.2, 0.2, 0.8, 180.0))
+    g1: G1Config = field(default_factory=lambda: G1Config("mujoco", None, None, 0.35, 250))
+    viewer: ViewerConfig = field(default_factory=lambda: ViewerConfig(30.0, "perspective", False, False, "upper"))
 
 
 def _choice(value: Any, field_name: str, choices: tuple[str, ...]) -> str:
@@ -111,6 +288,45 @@ def _boolean(value: Any, field_name: str) -> bool:
     if not isinstance(value, bool):
         raise ConfigError(f"{field_name} must be true or false")
     return value
+
+
+def _positive_float(value: Any, field_name: str) -> float:
+    if isinstance(value, bool):
+        raise ConfigError(f"{field_name} must be a positive number")
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"{field_name} must be a positive number") from exc
+    if not np.isfinite(parsed) or parsed <= 0:
+        raise ConfigError(f"{field_name} must be a positive finite number")
+    return parsed
+
+
+def _alpha(value: Any, field_name: str) -> float:
+    parsed = _positive_float(value, field_name)
+    if parsed > 1:
+        raise ConfigError(f"{field_name} must be at most 1")
+    return parsed
+
+
+def _optional_string(value: Any, field_name: str) -> str | None:
+    if value is None or value == "auto":
+        return None
+    if not isinstance(value, str) or not value:
+        raise ConfigError(f"{field_name} must be a path string or auto")
+    return value
+
+
+def _proper_matrix(value: Any, field_name: str) -> tuple[tuple[float, float, float], ...]:
+    try:
+        matrix = np.asarray(value, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"{field_name} must be a numeric 3x3 matrix") from exc
+    if matrix.shape != (3, 3) or not np.isfinite(matrix).all():
+        raise ConfigError(f"{field_name} must be a finite 3x3 matrix")
+    if not np.allclose(matrix.T @ matrix, np.eye(3), atol=1e-7) or not np.isclose(np.linalg.det(matrix), 1.0, atol=1e-7):
+        raise ConfigError(f"{field_name} must be a proper right-handed rotation")
+    return tuple(tuple(map(float, row)) for row in matrix)
 
 
 def _merge(target: dict[str, Any], update: Mapping[str, Any]) -> None:
@@ -149,6 +365,33 @@ def load_config(
             f"usb.pid 0x{pid:04x} is not a supported C1 router; "
             "only 0x5751 and 0x5851 are accepted"
         )
+    mapping = {
+        role: slot
+        for role, slot in data["body_mapping"].items()
+        if slot is not None and slot != "UNKNOWN"
+    }
+    if any(not isinstance(slot, str) or not slot for slot in mapping.values()):
+        raise ConfigError("body_mapping values must be non-empty slot names or null")
+    if len(set(mapping.values())) != len(mapping):
+        raise ConfigError("body_mapping cannot assign one slot to multiple roles")
+    skeleton = data["skeleton"]
+    full_body = data["full_body"]
+    retarget = data["retarget"]
+    filtering = data["filter"]
+    g1 = data["g1"]
+    if g1["mode"] != "mujoco":
+        raise ConfigError("g1.mode must be mujoco; real G1 modes are forbidden")
+    if data["frames"]["version"] != 1:
+        raise ConfigError("frames.version must be 1")
+    frame_status = _choice(data["frames"]["status"], "frames.status", FRAME_STATUSES)
+    calibration = data["calibration"]
+    viewer = data["viewer"]
+    profile = _choice(viewer["mode"], "viewer.mode", BODY_PROFILES)
+    unknown_mapping_roles = set(mapping) - set(roles_for_profile(profile))
+    if unknown_mapping_roles:
+        raise ConfigError(
+            f"body_mapping role {sorted(unknown_mapping_roles)[0]} is not valid for {profile} mode"
+        )
     return RuntimeConfig(
         usb=USBConfig(
             mode=_choice(usb["mode"], "usb.mode", USB_MODES),
@@ -177,7 +420,10 @@ def load_config(
             ),
         ),
         stream=StreamConfig(
-            mode=_choice(data["stream"]["mode"], "stream.mode", STREAM_MODES)
+            mode=_choice(data["stream"]["mode"], "stream.mode", STREAM_MODES),
+            stale_after_ms=_positive_float(
+                data["stream"]["stale_after_ms"], "stream.stale_after_ms"
+            ),
         ),
         monitor=MonitorConfig(
             show_raw=_boolean(data["monitor"]["show_raw"], "monitor.show_raw"),
@@ -188,6 +434,57 @@ def load_config(
                 data["monitor"]["show_quaternion"], "monitor.show_quaternion"
             ),
             show_imu=_boolean(data["monitor"]["show_imu"], "monitor.show_imu"),
+        ),
+        frames=FramesConfig(
+            _proper_matrix(data["frames"]["sensor_to_body_matrix"], "frames.sensor_to_body_matrix"),
+            frame_status,
+            1,
+        ),
+        body_mapping=BodyMappingConfig(mapping, profile),
+        calibration=CalibrationConfig(
+            _optional_string(calibration["file"], "calibration.file"),
+            _positive_float(calibration["duration_s"], "calibration.duration_s"),
+            _positive_int(calibration["minimum_samples"], "calibration.minimum_samples"),
+            _positive_float(
+                calibration["maximum_angular_deviation_deg"],
+                "calibration.maximum_angular_deviation_deg",
+            ),
+            _positive_float(
+                calibration["maximum_gyro_magnitude"],
+                "calibration.maximum_gyro_magnitude",
+            ),
+        ),
+        skeleton=SkeletonConfig(
+            *(_positive_float(skeleton[name], f"skeleton.{name}") for name in SkeletonConfig.__dataclass_fields__)
+        ),
+        full_body=FullBodyConfig(
+            *(
+                _positive_float(full_body[name], f"full_body.{name}")
+                for name in FullBodyConfig.__dataclass_fields__
+            )
+        ),
+        retarget=RetargetConfig(
+            *(_positive_float(retarget[name], f"retarget.{name}") for name in RetargetConfig.__dataclass_fields__)
+        ),
+        filter=FilterConfig(
+            _alpha(filtering["position_alpha"], "filter.position_alpha"),
+            _alpha(filtering["orientation_alpha"], "filter.orientation_alpha"),
+            _positive_float(filtering["max_translation_rate_m_s"], "filter.max_translation_rate_m_s"),
+            _positive_float(filtering["max_angular_rate_deg_s"], "filter.max_angular_rate_deg_s"),
+        ),
+        g1=G1Config(
+            "mujoco",
+            _optional_string(g1["xr_root"], "g1.xr_root"),
+            _optional_string(g1["mujoco_model"], "g1.mujoco_model"),
+            _positive_float(g1["max_joint_delta_rad"], "g1.max_joint_delta_rad"),
+            _positive_int(g1["steps_per_pose"], "g1.steps_per_pose"),
+        ),
+        viewer=ViewerConfig(
+            _positive_float(viewer["fps"], "viewer.fps"),
+            _choice(viewer["camera"], "viewer.camera", VIEWER_CAMERAS),
+            _boolean(viewer["show_segment_axes"], "viewer.show_segment_axes"),
+            _boolean(viewer["show_sensors"], "viewer.show_sensors"),
+            profile,
         ),
     )
 
