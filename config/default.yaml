@@ -110,3 +110,14 @@ viewer:
   camera: perspective
   show_segment_axes: false
   show_sensors: false
+
+# Preferred runtime: Windows MotionVenus solved skeleton -> UDP -> Linux.
+motionvenus:
+  bind: 0.0.0.0
+  port: 5001
+  format: binary
+  receive_timeout_ms: 250.0
+  stale_after_ms: 100.0
+  expected_body_bones: 23
+  retarget_profile: config/motionvenus_g1_retarget.yaml
+  mode: sim

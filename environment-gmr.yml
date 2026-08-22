@@ -1,0 +1,21 @@
+name: gmr
+channels:
+  - defaults
+dependencies:
+  - python=3.10.20
+  - pip
+  - pip:
+      - numpy==2.2.6
+      - scipy==1.15.3
+      - mujoco==3.12.0
+      - mink==1.3.0
+      - "qpsolvers[proxqp]==4.13.0"
+      - daqp==0.9.1
+      - loop-rate-limiters==1.2.0
+      - rich==15.0.0
+      - PyYAML==6.0.3
+      - pytest>=7
+# Torch must be installed separately with the PyTorch cu121 index:
+#   pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cu121
+# GMR editable install (no deps):
+#   pip install --no-deps -e /home/panu/Documents/fibo/project_humanoid/third_party/HumDex/GMR

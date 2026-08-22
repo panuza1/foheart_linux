@@ -19,6 +19,8 @@ STREAM_MODES = ("read_only", "experimental")
 FRAME_STATUSES = ("CONFIGURED", "MANUAL_DERIVED", "PARTIAL")
 VIEWER_CAMERAS = ("perspective", "front", "side")
 BODY_PROFILES = tuple(profile.value for profile in BodyProfile)
+MOTIONVENUS_FORMATS = ("auto", "binary", "json")
+MOTIONVENUS_MODES = ("sim", "real")
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "default.yaml"
 
 _DEFAULTS: dict[str, dict[str, Any]] = {
@@ -105,6 +107,16 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "show_segment_axes": False,
         "show_sensors": False,
         "mode": "upper",
+    },
+    "motionvenus": {
+        "bind": "0.0.0.0",
+        "port": 5001,
+        "format": "binary",
+        "receive_timeout_ms": 250.0,
+        "stale_after_ms": 100.0,
+        "expected_body_bones": 23,
+        "retarget_profile": "config/motionvenus_g1_retarget.yaml",
+        "mode": "sim",
     },
 }
 
@@ -233,6 +245,18 @@ class ViewerConfig:
 
 
 @dataclass(frozen=True)
+class MotionVenusConfig:
+    bind: str
+    port: int
+    format: str
+    receive_timeout_ms: float
+    stale_after_ms: float
+    expected_body_bones: int
+    retarget_profile: str
+    mode: str
+
+
+@dataclass(frozen=True)
 class RuntimeConfig:
     usb: USBConfig = field(default_factory=USBConfig)
     protocol: ProtocolConfig = field(default_factory=ProtocolConfig)
@@ -254,6 +278,12 @@ class RuntimeConfig:
     filter: FilterConfig = field(default_factory=lambda: FilterConfig(0.2, 0.2, 0.8, 180.0))
     g1: G1Config = field(default_factory=lambda: G1Config("mujoco", None, None, 0.35, 250))
     viewer: ViewerConfig = field(default_factory=lambda: ViewerConfig(30.0, "perspective", False, False, "upper"))
+    motionvenus: MotionVenusConfig = field(
+        default_factory=lambda: MotionVenusConfig(
+            "0.0.0.0", 5001, "binary", 250.0, 100.0, 23,
+            "config/motionvenus_g1_retarget.yaml", "sim",
+        )
+    )
 
 
 def _choice(value: Any, field_name: str, choices: tuple[str, ...]) -> str:
@@ -281,6 +311,13 @@ def _positive_int(value: Any, field_name: str) -> int:
     parsed = _auto_int(value, field_name)
     if parsed is None or parsed < 1:
         raise ConfigError(f"{field_name} must be positive")
+    return parsed
+
+
+def _udp_port(value: Any, field_name: str) -> int:
+    parsed = _positive_int(value, field_name)
+    if not 1024 <= parsed <= 65535:
+        raise ConfigError(f"{field_name} must be in 1024..65535")
     return parsed
 
 
@@ -314,6 +351,12 @@ def _optional_string(value: Any, field_name: str) -> str | None:
         return None
     if not isinstance(value, str) or not value:
         raise ConfigError(f"{field_name} must be a path string or auto")
+    return value
+
+
+def _nonempty_string(value: Any, field_name: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ConfigError(f"{field_name} must be a non-empty string")
     return value
 
 
@@ -386,6 +429,12 @@ def load_config(
     frame_status = _choice(data["frames"]["status"], "frames.status", FRAME_STATUSES)
     calibration = data["calibration"]
     viewer = data["viewer"]
+    motionvenus = data["motionvenus"]
+    expected_body_bones = _positive_int(
+        motionvenus["expected_body_bones"], "motionvenus.expected_body_bones"
+    )
+    if expected_body_bones != 23:
+        raise ConfigError("motionvenus.expected_body_bones must be 23 for the solved-body model")
     profile = _choice(viewer["mode"], "viewer.mode", BODY_PROFILES)
     unknown_mapping_roles = set(mapping) - set(roles_for_profile(profile))
     if unknown_mapping_roles:
@@ -485,6 +534,16 @@ def load_config(
             _boolean(viewer["show_segment_axes"], "viewer.show_segment_axes"),
             _boolean(viewer["show_sensors"], "viewer.show_sensors"),
             profile,
+        ),
+        motionvenus=MotionVenusConfig(
+            _nonempty_string(motionvenus["bind"], "motionvenus.bind"),
+            _udp_port(motionvenus["port"], "motionvenus.port"),
+            _choice(motionvenus["format"], "motionvenus.format", MOTIONVENUS_FORMATS),
+            _positive_float(motionvenus["receive_timeout_ms"], "motionvenus.receive_timeout_ms"),
+            _positive_float(motionvenus["stale_after_ms"], "motionvenus.stale_after_ms"),
+            expected_body_bones,
+            _nonempty_string(motionvenus["retarget_profile"], "motionvenus.retarget_profile"),
+            _choice(motionvenus["mode"], "motionvenus.mode", MOTIONVENUS_MODES),
         ),
     )
 

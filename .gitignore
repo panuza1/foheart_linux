@@ -9,8 +9,6 @@ htmlcov/
 build/
 dist/
 
-# Agent scratch reports
-CODEX_*.md
 .cursor/
 .vscode/
 .idea/
@@ -18,4 +16,3 @@ CODEX_*.md
 
 # Generated USB captures
 samples/*.bin
-

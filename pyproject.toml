@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "foheart-linux"
 version = "0.1.0"
-description = "Linux FOHEART C1 capture and upper-body joint viewer"
+description = "MotionVenus UDP skeleton retargeting to Unitree G1 simulation"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
